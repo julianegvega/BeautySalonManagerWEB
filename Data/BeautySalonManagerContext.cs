@@ -1,25 +1,22 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using BeautySalonManager.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using BeautySalonManager.Models;
 
 namespace BeautySalonManager.Data
 {
-    public class BeautySalonManagerContext : DbContext
+    public class BeautySalonContext : DbContext
     {
-        public BeautySalonManagerContext(DbContextOptions<BeautySalonManagerContext> options)
+        public BeautySalonContext(DbContextOptions<BeautySalonContext> options)
             : base(options)
         {
         }
 
         public DbSet<Servicio> Servicios { get; set; }
-        public DbSet<Cliente> Clientes { get; set; }
-        public DbSet<Empleado> Empleados { get; set; }
-        public DbSet<Cita> Citas { get; set; }
-        public DbSet<Inventario> Inventarios { get; set; }
+        // Define los DbSet para las otras entidades
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Servicio>().HasNoKey();
+        }
     }
 }
+

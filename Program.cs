@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using BeautySalonManager.Data;
+using System;
 
 namespace BeautySalonManager
 {
@@ -13,43 +12,38 @@ namespace BeautySalonManager
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            var host = CreateHostBuilder(args).Build();
 
-            // Configurar servicios
-            builder.Services.AddDbContext<BeautySalonManagerContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("BeautySalonManagerDB")));
+            // Llamada a un método para asegurarnos de que la base de datos se haya creado y migrado
+            CreateDbIfNotExists(host);
 
-            // Configurar identidad
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<BeautySalonManagerContext>();
+            host.Run();
+        }
 
-            builder.Services.AddRazorPages();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
 
-            var app = builder.Build();
-
-            // Configurar la canalización HTTP
-            if (app.Environment.IsDevelopment())
+        private static void CreateDbIfNotExists(IHost host)
+        {
+            using (var scope = host.Services.CreateScope())
             {
-                app.UseDeveloperExceptionPage();
+                var services = scope.ServiceProvider;
+
+                try
+                {
+                    var context = services.GetRequiredService<BeautySalonContext>();
+                    DbInitializer.Initialize(context);
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred creating the DB.");
+                }
             }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
-            app.UseRouting();
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.MapRazorPages();
-
-            app.Run();
-
         }
     }
 }
